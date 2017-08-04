@@ -26,7 +26,7 @@ import com.google.codeu.mathlang.parsing.TokenReader;
 // You should not need to change any other files to get your token reader to
 // work with the test of the system.
 public final class MyTokenReader implements TokenReader {
-  private String source;
+  private final String source;
   private int start;
 
   public MyTokenReader(String source) {
@@ -47,13 +47,17 @@ public final class MyTokenReader implements TokenReader {
     // which will stop all execution.
 
     String current = peek();
+    if(current.length() == 0){
+      return null;
+    }
+
     char token = Character.toLowerCase(current.charAt(0));
 
     if(token == '"'){
       int end = current.indexOf('"', 1);
 
       if(end != -1){
-        start = end + 1;
+        start += end + 1;
         return new StringToken(current.substring(1, end));
       }
       else throw new IOException("String has a closing quote missing.");
@@ -73,8 +77,12 @@ public final class MyTokenReader implements TokenReader {
       start += j;
       return new NumberToken(Double.parseDouble(number));
     }
+    else if(token == ' ' || token == '\n'){
+      ++start;
+      return next();
+    }
     else if(token != ';'){
-      String name = "" + token;
+      String name = "" + current.charAt(0);
 
       int j = 1;
       for(; j < current.length() && isAlphaNumeric(current.charAt(j)); ++j){
@@ -84,60 +92,22 @@ public final class MyTokenReader implements TokenReader {
       start += j;
       return new NameToken(name);
     }
-    else return null;
+    else {
+      ++start;
+      return new SymbolToken(';');
+    }
   }
 
-  private boolean isSymbol(char token) {
+  public static boolean isSymbol(char token) {
     return (token == '+' || token == '-' || token == '=');
   }
 
-  private boolean isAlphaNumeric(char token){
+  public static boolean isAlphaNumeric(char token){
     return (Character.isAlphabetic(token) || Character.isDigit(token));
   }
 
-  private String clear(String in, char c, int from){
-    if(in.indexOf(c, from) == -1) return null;
-    else return in.substring(from,in.indexOf(c)).replaceAll("\\s+","");
-  }
 
   private String peek(){
     return source.substring(start);
   }
-
-  private boolean isFunctionValid(String function){
-    switch (function.substring(0,1).toLowerCase()){
-      case "l":
-        // let function
-        return (function.length() > 2 && function.substring(0, 3) == "let");
-
-      case "p":
-        // print function
-        return (function.length() > 4 && function.substring(0, 5) == "print");
-
-      case "n":
-        // note function
-        return (function.length() > 3 && function.substring(0, 4) == "note");
-
-      default: return false;
-    }
-  }
-
-  public static void main(String[] args){
-
-    MyTokenReader reader = new MyTokenReader("var=3+4;");
-    try {
-      Token token;
-      do {
-        token = reader.next();
-        System.out.println(token);
-      } while (token != null);
-
-
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-
-  }
-
 }
