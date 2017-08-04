@@ -47,51 +47,52 @@ public final class MyTokenReader implements TokenReader {
     // which will stop all execution.
 
     String current = peek();
-    for(int i = 0; i < current.length(); ++i){
-      char token = Character.toLowerCase(current.charAt(i));
+    char token = Character.toLowerCase(current.charAt(0));
 
-      if(token == '"'){
-        int end = current.indexOf('"', i + 1);
+    if(token == '"'){
+      int end = current.indexOf('"', 1);
 
-        if(end != -1){
-          start = end + 1;
-          return new StringToken(current.substring(i + 1, end));
-        }
-        else throw new IOException("String has a closing quote missing.");
+      if(end != -1){
+        start = end + 1;
+        return new StringToken(current.substring(1, end));
       }
-      else if(isSymbol(token)){
-        start++;
-        return new SymbolToken(token);
-      }
-      else if(Character.isDigit(token)){
-        String number = "";
-
-        int j = i + 1;
-        for(; j < current.length() && Character.isDigit(current.charAt(j)); ++j){
-          number += current.charAt(j);
-        }
-
-        start = j;
-        return new NumberToken(Double.parseDouble(number));
-      }
-      else if(token != ';'){
-        String name = "";
-
-        int j = i + 1;
-        for(; j < current.length() && current.charAt(j) != ' '; ++j){
-          name += current.charAt(j);
-        }
-
-        start = j;
-        return new NameToken(name);
-      }
-      else return null;
+      else throw new IOException("String has a closing quote missing.");
     }
-    return null;
+    else if(isSymbol(token)){
+      start++;
+      return new SymbolToken(token);
+    }
+    else if(Character.isDigit(token)){
+      String number = "" + token;
+
+      int j = 1;
+      for(; j < current.length() && Character.isDigit(current.charAt(j)); ++j){
+        number += current.charAt(j);
+      }
+
+      start += j;
+      return new NumberToken(Double.parseDouble(number));
+    }
+    else if(token != ';'){
+      String name = "" + token;
+
+      int j = 1;
+      for(; j < current.length() && isAlphaNumeric(current.charAt(j)); ++j){
+        name += current.charAt(j);
+      }
+
+      start += j;
+      return new NameToken(name);
+    }
+    else return null;
   }
 
   private boolean isSymbol(char token) {
     return (token == '+' || token == '-' || token == '=');
+  }
+
+  private boolean isAlphaNumeric(char token){
+    return (Character.isAlphabetic(token) || Character.isDigit(token));
   }
 
   private String clear(String in, char c, int from){
@@ -119,6 +120,24 @@ public final class MyTokenReader implements TokenReader {
 
       default: return false;
     }
+  }
+
+  public static void main(String[] args){
+
+    MyTokenReader reader = new MyTokenReader("var=3+4;");
+    try {
+      Token token;
+      do {
+        token = reader.next();
+        System.out.println(token);
+      } while (token != null);
+
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+
   }
 
 }
